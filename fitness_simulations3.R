@@ -23,6 +23,8 @@
 # Also removed the low low stray rate (0.05)
 
 # Updated 11/18/14 by Kyle Shedd to change rrs values and proportion F1 values to better fill out power plot
+
+# Updates 4/6/15 by Kyle Shedd to optimize for speed by vectorizing! (i.e. kill rbind and sapply and for loops)
 #======================================================================================================================#
 # Source files, import packages, set working directory, initialize variables
 
@@ -42,125 +44,130 @@ size2=function(mu1,size1,mu2){
   invisible((mu2^2)/(var1-mu2))
 }
 
-#library(coin)
+library(coin)
 library(MASS)
 #library(lattice)
 
 ##### start of simulations to determine POWER ####################################################################################################
 ptm <- proc.time()
 
-rrs.values <- c(0.1, 0.2, 0.82, 0.8225, 0.825, 0.8275)
+rrs.values <- 0.9
 n.spawners <- seq(from = 100, to = 3000 , by = 100)
 
-stray = 0.15
-sample_prop_off = 0.667
+stray <- 0.10
+sample_prop_off <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)[8]
 
 # number of trials to get power
-trials = 1001                                           # number of independent simulations to do
+trials <- 2000  # number of independent simulations to do
 
-mu.n = 2  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
-size.n = 0.95
-var.n = nbnom_variance(mu.n,size.n)
+mu.n <- 2  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
+size.n <- 0.95
+var.n <- nbnom_variance(mu.n,size.n)
 
-OUT <- NULL
-for (r in 1:length(rrs.values)){
-  errs <- rrs.values[r]
-  mu.h = mu.n*errs
-  size.h =  size2(mu.n,size.n,mu.h)
+#ptm <- proc.time()
+OUT <- matrix(data=NA, nrow=length(rrs.values)*length(n.spawners), ncol=8, dimnames=list(seq(length(rrs.values)*length(n.spawners)) , c("RRS","N.h.parents","N.w.parents","N.h.offspring","N.w.offspring","Perm Power","nbGLM Power","ttest Power")))
   
-  for (z in 1:length(n.spawners)) {
-    n.h = n.spawners[z]*stray  # number of hatchery F1 spawners
-    n.w = n.spawners[z]*(1-stray)  # number of wild F1 spanwers
+  
+for (r in seq_along(rrs.values)) {
+  errs <- rrs.values[r]
+  mu.h <- mu.n*errs
+  size.h <-  size2(mu.n,size.n,mu.h)
+  
+  for (z in seq_along(n.spawners)) {
+    n.h <- n.spawners[z]*stray  # number of hatchery F1 spawners
+    n.w <- n.spawners[z]*(1-stray)  # number of wild F1 spanwers
     
-    OUT2 <- NULL
-    for(i in 1:trials){
+    OUT2 <- matrix(data=NA, nrow=trials, ncol=8, dimnames=list(1:trials, c("errs", "n.h", "n.w", "n.NHsampled", "n.NWsampled", "perm_1tail_pvalue", "nbGLM_1tail_pvalue", "ttest_1tail_pvalue")))
+    for(i in 1:trials) {
             
-      NWoffspring=rnbinom(n=n.w,size=size.n,mu=mu.n)   #take a sample of offspring based on this distribution
-      NHoffspring=rnbinom(n=n.h,size=size.h,mu=mu.h)
+      NWoffspring <- rnbinom(n=n.w,size=size.n,mu=mu.n)   #take a sample of offspring based on this distribution
+      NHoffspring <- rnbinom(n=n.h,size=size.h,mu=mu.h)
 
       
       
-      Noffspring=sum(NWoffspring,NHoffspring) # how many offspring produced given mu.n and RRS
-      Noffspring_escape=(n.h+n.w)*2*(1-stray) # how many offspring escape into stream (designed to keep pop size constant, so it is a function of stray rate)
-      
+      Noffspring <- sum(NWoffspring,NHoffspring) # how many offspring produced given mu.n and RRS
+
+      #### FIX ####
+      #Noffspring_escape <- (n.h+n.w)*2*(1-stray) # how many offspring escape into stream (designed to keep pop size constant, so it is a function of stray rate)
+      #### FIX ####
       
       
 # figure out how to sample a proportion of the offspring, what will family sizes look like
-      n.NWoffspring=sum(NWoffspring) # number off WILD offspring produced
-      n.NWsampled=round(n.NWoffspring*sample_prop_off)
-      NWsampled=sort(sample(1:n.NWoffspring,n.NWsampled,replace=FALSE)) # individual WILD offspring that were sampled (produced * sample rate)
+      n.NWoffspring <- sum(NWoffspring) # number off WILD offspring produced
+      n.NWsampled <- round(n.NWoffspring*sample_prop_off)
+      NWsampled <- sort(sample(x=1:n.NWoffspring, size=n.NWsampled, replace=FALSE)) # individual WILD offspring that were sampled (produced * sample rate)
 
-      cumNWoffspring=c(0,cumsum(NWoffspring))
-      NWassigned=sapply(seq_along(NWoffspring),function(i){length(NWsampled[(NWsampled <= cumNWoffspring[i+1]) & (NWsampled > cumNWoffspring[i])])})
+      NWassigned <- rep(NA, n.w)
+      Wdams.sampled <- rep(x=c(1:n.w), NWoffspring)[NWsampled]
+      NWassigned[which(!seq(n.w) %in% Wdams.sampled)] <- 0
+      NWassigned[as.numeric(names(table(Wdams.sampled)))] <- as.vector(table(Wdams.sampled))
 
-#cumNWoffspring=cbind(c(0,cumsum(NWoffspring)[1:n.w-1]),cumsum(NWoffspring))
-#NWassigned=apply(cumNWoffspring,1,function(row){length(NWsampled[(NWsampled <= row[2]) & (NWsampled > row[1])])})
 
-      n.NHoffspring=sum(NHoffspring) # number off HATCHERY offspring produced
-      n.NHsampled=round(n.NHoffspring*sample_prop_off)
-      NHsampled=sort(sample(1:n.NHoffspring,n.NHsampled,replace=FALSE)) # individual HATCHERY offspring that were sampled (produced * sample rate)
 
-      cumNHoffspring=c(0,cumsum(NHoffspring))
-      NHassigned=sapply(seq_along(NHoffspring),function(i){length(NHsampled[(NHsampled <= cumNHoffspring[i+1]) & (NHsampled > cumNHoffspring[i])])})
+      n.NHoffspring <- sum(NHoffspring) # number off HATCHERY offspring produced
+      n.NHsampled <- round(n.NHoffspring*sample_prop_off)
+      NHsampled <- sort(sample(x=1:n.NHoffspring, size=n.NHsampled, replace=FALSE)) # individual HATCHERY offspring that were sampled (produced * sample rate)
 
-#cumNHoffspring=cbind(c(0,cumsum(NHoffspring)[1:n.h-1]),cumsum(NHoffspring))
-#NHassigned=apply(cumNHoffspring,1,function(row){length(NHsampled[(NHsampled <= row[2]) & (NHsampled > row[1])])})
+      NHassigned <- rep(NA, n.h)
+      Hdams.sampled <- rep(x=c(1:n.h), NHoffspring)[NHsampled]
+      NHassigned[which(!seq(n.h) %in% Hdams.sampled)] <- 0
+      NHassigned[as.numeric(names(table(Hdams.sampled)))] <- as.vector(table(Hdams.sampled))
+
 
 #################################################################
 # Do a one-sided test
 # output should have t.test, permutation test, and Nbinom
 
-      mydata=data.frame(nOff=c(NWassigned,NHassigned),Origin=c(rep("W",n.w),rep("H",n.h)))
+      mydata <- data.frame(nOff=c(NWassigned,NHassigned), Origin=c(rep("W",n.w),rep("H",n.h)))
 
 # permutation test (1-tail)
-      reps=10000
-      true_diff=mean(NWassigned)-mean(NHassigned)
-      Wfams=replicate(reps,sum(sample(c(NWassigned,NHassigned),size=n.w,replace=FALSE)))
-      Hfams=sum(NWassigned,NHassigned)-Wfams
-      rsW=Wfams/n.w
-      rsH=Hfams/n.h
-      diffs=rsW-rsH
-      perm_1tail_pvalue=round(sum(diffs>=true_diff)/reps,4)
+      perm_1tail_pvalue <- round(x=as.numeric(pvalue(oneway_test(nOff~Origin, data=mydata, distribution=approximate(B=10000), alternative="less"))), digits=4)
 
-      #perm_1tail_pvalue2=round(as.numeric(pvalue(oneway_test(nOff~Origin, data=mydata, distribution=approximate(B=10000), alternative="less"))),4)
+      #reps <- 10000
+      #true_diff <- mean(NWassigned)-mean(NHassigned)
+      #Wfams <- replicate(reps,sum(sample(c(NWassigned,NHassigned),size=n.w,replace=FALSE)))
+      #Hfams <- sum(NWassigned,NHassigned)-Wfams
+      #rsW <- Wfams/n.w
+      #rsH <- Hfams/n.h
+      #diffs <- rsW-rsH
+      #perm_1tail_pvalue <- round(sum(diffs>=true_diff)/reps,4)
+
+      #perm_1tail_pvalue2 <- round(as.numeric(pvalue(oneway_test(nOff~Origin, data=mydata, distribution=approximate(B=10000), alternative="less"))),4)
 # negative binomial GLM (1-tail)
       fit <- glm.nb(nOff~Origin, data=mydata, init.theta=1, link=log)
-      nbGLM_1tail_pvalue=round(pnorm(summary(fit)$coefficients[2,3],lower.tail=FALSE),4)
+      nbGLM_1tail_pvalue <- round(pnorm(summary(fit)$coefficients[2,3],lower.tail=FALSE),4)
 
 # t.test (1-tail)
       test <- t.test(NWassigned, NHassigned, alternative="greater")
-      ttest_1tail_pvalue=round(test$p.value,4)
+      ttest_1tail_pvalue <- round(test$p.value,4)
 
 # building output
-      out <- cbind(errs, n.h, n.w, n.NHsampled, n.NWsampled, perm_1tail_pvalue, nbGLM_1tail_pvalue, ttest_1tail_pvalue)
-      OUT2 <- rbind(OUT2, out)
+      OUT2[i,] <- c(errs, n.h, n.w, n.NHsampled, n.NWsampled, perm_1tail_pvalue, nbGLM_1tail_pvalue, ttest_1tail_pvalue)
     }
 
-# compiling to parameter level
-    perm_n.sig <- length(which(OUT2[, "perm_1tail_pvalue"] < 0.05))
-    perm_pwr   <- perm_n.sig/trials
+    OUT[(r-1)*length(n.spawners)+z, ] <- c(OUT2[1,c(1:5)], sum(OUT2[, "perm_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "nbGLM_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "ttest_1tail_pvalue"] < 0.05) / trials)
 
-    nbGLM_n.sig <- length(which(OUT2[, "nbGLM_1tail_pvalue"] < 0.05))
-    nbGLM_pwr   <- nbGLM_n.sig/trials
-
-    ttest_n.sig <- length(which(OUT2[, "ttest_1tail_pvalue"] < 0.05))
-    ttest_pwr   <- ttest_n.sig/trials
-
-
-    out2 <- OUT2[1, ]
-    out2[6] <- perm_pwr
-    out2[7] <- nbGLM_pwr
-    out2[8] <- ttest_pwr
-
-
-    OUT <- rbind(OUT, out2) 
   }
   
   
 }  
-proc.time() - ptm
+proc.time() - ptm; beep(2)
 
-rownames(OUT)=c(1:dim(OUT)[1])
-colnames(OUT)=c("RRS","N.h.parents","N.w.parents","N.h.offspring","N.w.offspring","Perm Power","nbGLM Power","ttest Power")
+#rownames(OUT) <- c(1:dim(OUT)[1])
+#colnames(OUT) <- c("RRS","N.h.parents","N.w.parents","N.h.offspring","N.w.offspring","Perm Power","nbGLM Power","ttest Power")
 
-write.table(OUT, paste("mu",mu.n,"/simulation_results_stray",stray,"_prop_",round(sample_prop_off,3),"_trials_",trials,"_muRSn_",mu.n,".txt",sep=''), col.names = TRUE, sep="\t")
+write.table(OUT, paste("mu",mu.n,"/simulation_results_stray",stray,"_prop_",round(sample_prop_off,3),"_trials_",trials,"_muRSn_",mu.n,"_RRS_",rrs.values[1],".txt",sep=''), col.names = TRUE, sep="\t")
+
+
+
+
+
+
+#### Scrap Code #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## This is a slightly faster way to get the family sizes after only sampling a proportion of offspring, but it does not mantain which families produced...
+#ptm <- proc.time()
+#dams <- rep(x=c(1:n.w), NWoffspring)[NWsampled]
+#fallow <- rep(x=0, times=sum(!seq(n.w)%in%dams))
+#NWassigned2 <-c(fallow, as.vector(table(dams)))
+#proc.time()-ptm
