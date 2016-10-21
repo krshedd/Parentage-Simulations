@@ -1,0 +1,7 @@
+Stream	f1sampprop.aerial	uRSn.aerial	f1sampprop.walk	uRSn.walk
+Gilmour	1.20	NA	1.07	NA
+Spring	0.48	0.88	0.52	0.81
+Paddy	1.09	0.35	0.30	60.11
+Erb	0.45	0.82	1.09	1.87
+HoganBay	0.50	0.12	0.95	0.35
+Stockdale	0.34	4.45	0.31	1.77
