@@ -21,24 +21,14 @@
 # in progeny + new strays = 3000
 
 # Also removed the low low stray rate (0.05)
+
+# Updated 11/18/14 by Kyle Shedd to change rrs values and proportion F1 values to better fill out power plot
 #======================================================================================================================#
 # Source files, import packages, set working directory, initialize variables
 
 ls()
 rm(list=ls(all=TRUE))
 setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie")
-
-# Which run is this?
-run=1
-
-
-# Define stray rates to model
-stray_rates=c(0.15,0.5)
-
-# Define sample proportion of offspring
-sample_prop_off_rates=c((1:6)/6)
-
-
 
 ##########################
 
@@ -59,16 +49,16 @@ library(MASS)
 ##### start of simulations to determine POWER ####################################################################################################
 ptm <- proc.time()
 
-rrs.values <- c(0.5, 0.6, 0.7, 0.8, 0.9, 0.95)
+rrs.values <- c(0.2, 0.33, 0.75, 0.825 ,0.85 ,0.875)
 n.spawners <- seq(from = 100, to = 3000 , by = 100)
 
-stray = rep(stray_rates,each=length(sample_prop_off_rates))[run]
-sample_prop_off = rep(sample_prop_off_rates,length(stray_rates))[run]
+stray = 0.5
+sample_prop_off = 1
 
 # number of trials to get power
-trials = 2000                                           # number of independent simulations to do
+trials = 1000                                           # number of independent simulations to do
 
-mu.n = 5.39  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
+mu.n = 2  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
 size.n = 0.95
 var.n = nbnom_variance(mu.n,size.n)
 
