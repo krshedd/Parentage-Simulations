@@ -49,14 +49,14 @@ library(MASS)
 ##### start of simulations to determine POWER ####################################################################################################
 ptm <- proc.time()
 
-rrs.values <- c(0.2, 0.33, 0.75, 0.825 ,0.85 ,0.875)
+rrs.values <- c(0.1, 0.2, 0.82, 0.8225, 0.825, 0.8275)
 n.spawners <- seq(from = 100, to = 3000 , by = 100)
 
-stray = 0.5
-sample_prop_off = 1
+stray = 0.15
+sample_prop_off = 0.667
 
 # number of trials to get power
-trials = 1000                                           # number of independent simulations to do
+trials = 1001                                           # number of independent simulations to do
 
 mu.n = 2  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
 size.n = 0.95
