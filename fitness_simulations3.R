@@ -15,7 +15,10 @@
 # the average R/S for a wild PWS pink may be 5.39, the escapement is managed to be constant (in theory) so the R/S should
 # be ~ 2 for replacement (assuming monogamous mating)
 
-# Updated 11/14/14 by Kyle shedd to change mu.n to 1 (replacement for a 50% stray rate stream)
+# Updated 11/14/14 by Kyle Shedd to change mu.n to 1 (replacement for a 50% stray rate stream)
+
+# Updated 11/14/14 by Kyle Shedd to change mu.n to 5.39 (average R/S for PWS pinks), then cull so that 1500 matings result
+# in progeny + new strays = 3000
 
 # Also removed the low low stray rate (0.05)
 #======================================================================================================================#
@@ -26,7 +29,7 @@ rm(list=ls(all=TRUE))
 setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie")
 
 # Which run is this?
-run=5
+run=1
 
 
 # Define stray rates to model
@@ -65,7 +68,7 @@ sample_prop_off = rep(sample_prop_off_rates,length(stray_rates))[run]
 # number of trials to get power
 trials = 2000                                           # number of independent simulations to do
 
-mu.n = 1  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
+mu.n = 5.39  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
 size.n = 0.95
 var.n = nbnom_variance(mu.n,size.n)
 
@@ -85,6 +88,13 @@ for (r in 1:length(rrs.values)){
       NWoffspring=rnbinom(n=n.w,size=size.n,mu=mu.n)   #take a sample of offspring based on this distribution
       NHoffspring=rnbinom(n=n.h,size=size.h,mu=mu.h)
 
+      
+      
+      Noffspring=sum(NWoffspring,NHoffspring) # how many offspring produced given mu.n and RRS
+      Noffspring_escape=(n.h+n.w)*2*(1-stray) # how many offspring escape into stream (designed to keep pop size constant, so it is a function of stray rate)
+      
+      
+      
 # figure out how to sample a proportion of the offspring, what will family sizes look like
       n.NWoffspring=sum(NWoffspring) # number off WILD offspring produced
       n.NWsampled=round(n.NWoffspring*sample_prop_off)
