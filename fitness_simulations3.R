@@ -35,6 +35,8 @@
 # very small and the number of parents caught are very small such as Paddy 2013).
 
 # Updated 4/23/15 by Kyle Shedd to fix bug associated with sample_prop_off and OUT not refreshing to NA before looping
+
+# Updated 5/28/15 by Kyle Shedd to add "while" loop, NOT DONE YET!!!!
 #======================================================================================================================#
 # Source files, import packages, set working directory, initialize variables
 
@@ -92,6 +94,8 @@ for(kSample.Prop in kSample.Prop.Offs){
               
         OUT2 <- matrix(data = NA, nrow = trials, ncol = 10, dimnames = list(1:trials, c("errs", "mu.n", "size.n", "n.h", "n.w", "n.NHsampled", "n.NWsampled", "perm_1tail_pvalue", "nbGLM_1tail_pvalue", "ttest_1tail_pvalue")))
 
+        while(OUT[sum((r-1)*length(mu.n.values)*length(size.values), "Perm Power"] < 1) {}
+        
         for(i in 1:trials) {
             
           NWoffspring <- rnbinom(n = n.w, size = size.n, mu = mu.n)   #take a sample of offspring based on this distribution
