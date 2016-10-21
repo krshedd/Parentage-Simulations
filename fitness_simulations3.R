@@ -33,6 +33,8 @@
 
 # Updated 4/21/15 by Kyle Shedd to skip trial iterations in for loop when mydata$nOff == 0 (i.e. when mu.n and size.n are
 # very small and the number of parents caught are very small such as Paddy 2013).
+
+# Updated 4/23/15 by Kyle Shedd to fix bug associated with sample_prop_off and OUT not refreshing to NA before looping
 #======================================================================================================================#
 # Source files, import packages, set working directory, initialize variables
 
@@ -54,8 +56,9 @@ ptm <- proc.time()
 ## Stream specific otolith results for females
 # Create a matrix of all stream/year/n.w/n.h values and then call them by row. Capiche?
 parents <- read.table(file = "StreamSpecific_All_Female_2013_2014.txt", header = TRUE, row.names = NULL, as.is = TRUE, sep = "\t")
-i = 10
+i = 17
 
+setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie/StreamSpecific_ConstSize_RRS_0.8")
 stream <- parents[i, 1]
 year <- parents[i, 2]
 n.w <- parents[i, 3]
@@ -65,21 +68,18 @@ n.h <- parents[i, 4]
 trials <- 2000
 
 # R will spit out a .txt file for each F1 prop, but you can change how many run in each instance to speed things along
-sample_prop_off <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)[1:8]
+kSample.Prop.Offs <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)[4]
 
-rrs.values <- 0.5 # seq(from = 0.5, to = 1, by = 0.05)
+rrs.values <- 0.8 # seq(from = 0.5, to = 1, by = 0.05)
 mu.n.values <- c(0.25, seq(from = 0.5, to = 5, by = 0.5)) # R/female S (i.e. R/S / 2) # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
 size.values <- c(1, 2, 5, 10) #0.95
-
-#ptm <- proc.time()
-OUT <- matrix(data = NA, nrow = length(rrs.values)*length(mu.n.values)*length(size.values), ncol = 10, dimnames = list(seq(length(rrs.values)*length(mu.n.values)*length(size.values)), c("RRS", "mu.n", "size.n", "N.h.parents", "N.w.parents", "N.h.offspring", "N.w.offspring", "Perm Power", "nbGLM Power", "ttest Power")))
 
 
 #### Stopped HERE ####
 
-for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
-  
-  
+for(kSample.Prop in kSample.Prop.Offs){
+  OUT <- matrix(data = NA, nrow = length(rrs.values)*length(mu.n.values)*length(size.values), ncol = 10, dimnames = list(seq(length(rrs.values)*length(mu.n.values)*length(size.values)), c("RRS", "mu.n", "size.n", "N.h.parents", "N.w.parents", "N.h.offspring", "N.w.offspring", "Perm Power", "nbGLM Power", "ttest Power")))
+    
   for (r in seq_along(rrs.values)) {
     errs <- rrs.values[r]
   
@@ -101,7 +101,7 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
 # figure out how to sample a proportion of the offspring, what will family sizes look like
       # Wild
           n.NWoffspring <- sum(NWoffspring) # number off WILD offspring produced
-          n.NWsampled <- round(n.NWoffspring*sample_prop_off)
+          n.NWsampled <- round(n.NWoffspring*kSample.Prop)
           NWsampled <- sort(sample(x = 1:n.NWoffspring, size = n.NWsampled, replace = FALSE)) # individual WILD offspring that were sampled (produced * sample rate)
 
           NWassigned <- rep(NA, n.w)
@@ -111,7 +111,7 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
 
       # Hatchery
           n.NHoffspring <- sum(NHoffspring) # number off HATCHERY offspring produced
-          n.NHsampled <- round(n.NHoffspring*sample_prop_off)
+          n.NHsampled <- round(n.NHoffspring*kSample.Prop)
           NHsampled <- sort(sample(x = 1:n.NHoffspring, size = n.NHsampled, replace = FALSE)) # individual HATCHERY offspring that were sampled (produced * sample rate)
 
           NHassigned <- rep(NA, n.h)
@@ -164,7 +164,7 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
   
   }
 
-  write.table(OUT, paste("StreamSpecific_ConstSize", "/simulation_results_stream_", stream, "_", year, "_prop_", round(sample_prop_off, 3), "_trials_", trials, ".txt", sep = ''), col.names = TRUE, sep = "\t")
+  write.table(OUT, paste("simulation_results_stream_", stream, "_", year, "_prop_", round(kSample.Prop, 3), "_trials_", trials, ".txt", sep = ''), col.names = TRUE, sep = "\t")
 
 }
 proc.time() - ptm; beep(8)
