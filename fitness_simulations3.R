@@ -30,6 +30,9 @@
 
 # Updated 4/21/15 by Kyle Shedd to change var.n = var.h to size.n = size.h after talking to Jim Jasper. Holding variance 
 # constant seems unrealistic in the reduction of dispersion (size).
+
+# Updated 4/21/15 by Kyle Shedd to skip trial iterations in for loop when mydata$nOff == 0 (i.e. when mu.n and size.n are
+# very small and the number of parents caught are very small such as Paddy 2013).
 #======================================================================================================================#
 # Source files, import packages, set working directory, initialize variables
 
@@ -51,7 +54,7 @@ ptm <- proc.time()
 ## Stream specific otolith results for females
 # Create a matrix of all stream/year/n.w/n.h values and then call them by row. Capiche?
 parents <- read.table(file = "StreamSpecific_All_Female_2013_2014.txt", header = TRUE, row.names = NULL, as.is = TRUE, sep = "\t")
-i = 1
+i = 10
 
 stream <- parents[i, 1]
 year <- parents[i, 2]
@@ -62,7 +65,7 @@ n.h <- parents[i, 4]
 trials <- 2000
 
 # R will spit out a .txt file for each F1 prop, but you can change how many run in each instance to speed things along
-sample_prop_off <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)
+sample_prop_off <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)[1:8]
 
 rrs.values <- 0.5 # seq(from = 0.5, to = 1, by = 0.05)
 mu.n.values <- c(0.25, seq(from = 0.5, to = 5, by = 0.5)) # R/female S (i.e. R/S / 2) # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
@@ -123,6 +126,9 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
 
           mydata <- data.frame(nOff = c(NWassigned, NHassigned), Origin = c(rep("W", n.w), rep("H", n.h)))
 
+          if(sum(mydata$nOff) == 0) {
+            next
+          }
 # permutation test (1-tail)
           perm_1tail_pvalue <- round(x = as.numeric(pvalue(oneway_test(nOff~Origin, data = mydata, distribution = approximate(B = 10000), alternative = "less"))), digits = 4)
 
@@ -146,9 +152,10 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
 
 # building output
           OUT2[i, ] <- c(errs, mu.n, size.n, n.h, n.w, n.NHsampled, n.NWsampled, perm_1tail_pvalue, nbGLM_1tail_pvalue, ttest_1tail_pvalue)
+
         }
 
-        OUT[sum((r-1)*length(mu.n.values)*length(size.values), (m-1)*length(size.values), s), ] <- c(OUT2[1, c(1:5)], mean(OUT2[, "n.NHsampled"]), mean(OUT2[, "n.NWsampled"]), sum(OUT2[, "perm_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "nbGLM_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "ttest_1tail_pvalue"] < 0.05) / trials)
+        OUT[sum((r-1)*length(mu.n.values)*length(size.values), (m-1)*length(size.values), s), ] <- c(OUT2[1, c(1:5)], mean(OUT2[, "n.NHsampled"], na.rm = TRUE), mean(OUT2[, "n.NWsampled"], na.rm = TRUE), sum(OUT2[, "perm_1tail_pvalue"] < 0.05, na.rm = TRUE) / sum(!is.na(OUT2[, "perm_1tail_pvalue"])), sum(OUT2[, "nbGLM_1tail_pvalue"] < 0.05, na.rm = TRUE) / sum(!is.na(OUT2[, "nbGLM_1tail_pvalue"])), sum(OUT2[, "ttest_1tail_pvalue"] < 0.05, na.rm = TRUE) / sum(!is.na(OUT2[, "ttest_1tail_pvalue"])))
   
       }
 
@@ -161,21 +168,3 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
 
 }
 proc.time() - ptm; beep(8)
-
-#rownames(OUT) <- c(1:dim(OUT)[1])
-#colnames(OUT) <- c("RRS", "N.h.parents", "N.w.parents", "N.h.offspring", "N.w.offspring", "Perm Power", "nbGLM Power", "ttest Power")
-
-
-
-
-
-
-
-#### Scrap Code #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-## This is a slightly faster way to get the family sizes after only sampling a proportion of offspring, but it does not mantain which families produced...
-#ptm <- proc.time()
-#dams <- rep(x = c(1:n.w), NWoffspring)[NWsampled]
-#fallow <- rep(x = 0, times = sum(!seq(n.w)%in%dams))
-#NWassigned2 <-c(fallow, as.vector(table(dams)))
-#proc.time()-ptm
