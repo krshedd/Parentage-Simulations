@@ -15,13 +15,15 @@
 # the average R/S for a wild PWS pink may be 5.39, the escapement is managed to be constant (in theory) so the R/S should
 # be ~ 2 for replacement (assuming monogamous mating)
 
+# Updated 11/14/14 by Kyle shedd to change mu.n to 1 (replacement for a 50% stray rate stream)
+
 # Also removed the low low stray rate (0.05)
 #======================================================================================================================#
 # Source files, import packages, set working directory, initialize variables
 
 ls()
 rm(list=ls(all=TRUE))
-setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie/mu2")
+setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie")
 
 # Which run is this?
 run=5
@@ -63,7 +65,7 @@ sample_prop_off = rep(sample_prop_off_rates,length(stray_rates))[run]
 # number of trials to get power
 trials = 2000                                           # number of independent simulations to do
 
-mu.n = 2  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
+mu.n = 1  # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
 size.n = 0.95
 var.n = nbnom_variance(mu.n,size.n)
 
@@ -79,6 +81,7 @@ for (r in 1:length(rrs.values)){
     
     OUT2 <- NULL
     for(i in 1:trials){
+            
       NWoffspring=rnbinom(n=n.w,size=size.n,mu=mu.n)   #take a sample of offspring based on this distribution
       NHoffspring=rnbinom(n=n.h,size=size.h,mu=mu.h)
 
@@ -90,6 +93,8 @@ for (r in 1:length(rrs.values)){
       cumNWoffspring=c(0,cumsum(NWoffspring))
       NWassigned=sapply(seq_along(NWoffspring),function(i){length(NWsampled[(NWsampled <= cumNWoffspring[i+1]) & (NWsampled > cumNWoffspring[i])])})
 
+#cumNWoffspring=cbind(c(0,cumsum(NWoffspring)[1:n.w-1]),cumsum(NWoffspring))
+#NWassigned=apply(cumNWoffspring,1,function(row){length(NWsampled[(NWsampled <= row[2]) & (NWsampled > row[1])])})
 
       n.NHoffspring=sum(NHoffspring) # number off HATCHERY offspring produced
       n.NHsampled=round(n.NHoffspring*sample_prop_off)
@@ -97,6 +102,9 @@ for (r in 1:length(rrs.values)){
 
       cumNHoffspring=c(0,cumsum(NHoffspring))
       NHassigned=sapply(seq_along(NHoffspring),function(i){length(NHsampled[(NHsampled <= cumNHoffspring[i+1]) & (NHsampled > cumNHoffspring[i])])})
+
+#cumNHoffspring=cbind(c(0,cumsum(NHoffspring)[1:n.h-1]),cumsum(NHoffspring))
+#NHassigned=apply(cumNHoffspring,1,function(row){length(NHsampled[(NHsampled <= row[2]) & (NHsampled > row[1])])})
 
 #################################################################
 # Do a one-sided test
@@ -155,4 +163,4 @@ proc.time() - ptm
 rownames(OUT)=c(1:dim(OUT)[1])
 colnames(OUT)=c("RRS","N.h.parents","N.w.parents","N.h.offspring","N.w.offspring","Perm Power","nbGLM Power","ttest Power")
 
-write.table(OUT, paste("simulation_results_stray",stray,"_prop_",round(sample_prop_off,3),"_trials_",trials,"_muRSn_",mu.n,".txt",sep=''), col.names = TRUE, sep="\t")
+write.table(OUT, paste("mu",mu.n,"/simulation_results_stray",stray,"_prop_",round(sample_prop_off,3),"_trials_",trials,"_muRSn_",mu.n,".txt",sep=''), col.names = TRUE, sep="\t")
