@@ -39,16 +39,6 @@ setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie")
 
 ##########################
 
-# Functions to help
-nbnom_variance <- function(mu, size){
-  invisible(mu+((mu^2)/size))
-}
-
-size2 <- function(mu1, size1, mu2){
-  var1 <- nbnom_variance(mu1, size1)
-  invisible((mu2^2)/(var1-mu2))
-}
-
 library(coin)
 library(MASS)
 library(beepr)
@@ -59,22 +49,27 @@ ptm <- proc.time()
 
 
 ## Stream specific otolith results for females
-stream <- "Stockdale"
-year <- "2013"
-n.w <- 465
-n.h <- 104
+# Create a matrix of all stream/year/n.w/n.h values and then call them by row. Capiche?
+parents <- read.table(file = "StreamSpecific_All_Female_2013_2014.txt", header = TRUE, row.names = NULL, as.is = TRUE, sep = "\t")
+i = 1
 
-# number of trials to get power
-trials <- 2000  # number of independent simulations to do
+stream <- parents[i, 1]
+year <- parents[i, 2]
+n.w <- parents[i, 3]
+n.h <- parents[i, 4]
 
-sample_prop_off <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)[1]
+# number of independent simulations to do
+trials <- 2000
 
-rrs.values <- 0.5# seq(from = 0.5, to = 1, by = 0.05)
-mu.n.values <- seq(from = 1, to = 8, by = 0.5) # R/female S (i.e. R/S / 2) # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
-size.n.values <- c(1, 2, 5, 10) #0.95
+# R will spit out a .txt file for each F1 prop, but you can change how many run in each instance to speed things along
+sample_prop_off <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)
+
+rrs.values <- 0.5 # seq(from = 0.5, to = 1, by = 0.05)
+mu.n.values <- c(0.25, seq(from = 0.5, to = 5, by = 0.5)) # R/female S (i.e. R/S / 2) # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
+size.values <- c(1, 2, 5, 10) #0.95
 
 #ptm <- proc.time()
-OUT <- matrix(data = NA, nrow = length(rrs.values)*length(mu.n.values)*length(size.n.values), ncol = 10, dimnames = list(seq(length(rrs.values)*length(mu.n.values)*length(size.n.values)), c("RRS", "mu.n", "size.n", "N.h.parents", "N.w.parents", "N.h.offspring", "N.w.offspring", "Perm Power", "nbGLM Power", "ttest Power")))
+OUT <- matrix(data = NA, nrow = length(rrs.values)*length(mu.n.values)*length(size.values), ncol = 10, dimnames = list(seq(length(rrs.values)*length(mu.n.values)*length(size.values)), c("RRS", "mu.n", "size.n", "N.h.parents", "N.w.parents", "N.h.offspring", "N.w.offspring", "Perm Power", "nbGLM Power", "ttest Power")))
 
 
 #### Stopped HERE ####
@@ -89,17 +84,15 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
       mu.n <- mu.n.values[m]
       mu.h <- mu.n*rrs.values
 
-      for(s in seq_along(size.n.values)){
-        size.n <- size.n.values[s]
-        var.n <- nbnom_variance(mu.n, size.n)
-        size.h <-  size2(mu.n, size.n, mu.h)
-      
+      for(s in seq_along(size.values)){
+        size.n <- size.values[s]
+              
         OUT2 <- matrix(data = NA, nrow = trials, ncol = 10, dimnames = list(1:trials, c("errs", "mu.n", "size.n", "n.h", "n.w", "n.NHsampled", "n.NWsampled", "perm_1tail_pvalue", "nbGLM_1tail_pvalue", "ttest_1tail_pvalue")))
 
         for(i in 1:trials) {
             
           NWoffspring <- rnbinom(n = n.w, size = size.n, mu = mu.n)   #take a sample of offspring based on this distribution
-          NHoffspring <- rnbinom(n = n.h, size = size.h, mu = mu.h)
+          NHoffspring <- rnbinom(n = n.h, size = size.n, mu = mu.h)
           Noffspring <- sum(NWoffspring, NHoffspring) # how many offspring produced given mu.n and RRS
       
 # figure out how to sample a proportion of the offspring, what will family sizes look like
@@ -155,7 +148,7 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
           OUT2[i, ] <- c(errs, mu.n, size.n, n.h, n.w, n.NHsampled, n.NWsampled, perm_1tail_pvalue, nbGLM_1tail_pvalue, ttest_1tail_pvalue)
         }
 
-        OUT[sum((r-1)*length(mu.n.values)*length(size.n.values), (m-1)*length(size.n.values), s), ] <- c(OUT2[1, c(1:5)], mean(OUT2[, "n.NHsampled"]), mean(OUT2[, "n.NWsampled"]), sum(OUT2[, "perm_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "nbGLM_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "ttest_1tail_pvalue"] < 0.05) / trials)
+        OUT[sum((r-1)*length(mu.n.values)*length(size.values), (m-1)*length(size.values), s), ] <- c(OUT2[1, c(1:5)], mean(OUT2[, "n.NHsampled"]), mean(OUT2[, "n.NWsampled"]), sum(OUT2[, "perm_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "nbGLM_1tail_pvalue"] < 0.05) / trials, sum(OUT2[, "ttest_1tail_pvalue"] < 0.05) / trials)
   
       }
 
@@ -164,7 +157,7 @@ for(sample_prop_off in c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)){
   
   }
 
-  write.table(OUT, paste("StreamSpecific", "/simulation_results_stream_", stream, "_", year, "_prop_", round(sample_prop_off, 3), "_trials_", trials, ".txt", sep = ''), col.names = TRUE, sep = "\t")
+  write.table(OUT, paste("StreamSpecific_ConstSize", "/simulation_results_stream_", stream, "_", year, "_prop_", round(sample_prop_off, 3), "_trials_", trials, ".txt", sep = ''), col.names = TRUE, sep = "\t")
 
 }
 proc.time() - ptm; beep(8)
