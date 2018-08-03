@@ -2,18 +2,17 @@ setwd("V:/Analysis/5_Coastwide/Multispecies/Alaska Hatchery Research Program/Par
 
 source("H:/R Source Scripts/Functions.GCL_KS.R")
 
+stream.dat <- read.table(file = "GitHub-Parentage-Simulations/KyleStreamData.txt", header = TRUE, stringsAsFactors = FALSE)
+stream.mat <- data.matrix(stream.dat[, 2:5])
+rownames(stream.mat) <- stream.dat$Stream
+
 #### Target Dir
 # setwd("StreamSpecific")  # var.n = var.h
 setwd("StreamSpecific_ConstSize")  # size.n = size.h
 # setwd("StreamSpecific_ConstSize_RRS_0.8")  # size.n = size.h
 
-stream.dat <- read.table(file = "V:/Presentations/Public/AHRP/March 2016 Science Panel Meeting/KyleStreamData.txt", header = TRUE, stringsAsFactors = FALSE)
-stream.mat <- data.matrix(stream.dat[, 2:5])
-rownames(stream.mat) <- stream.dat$Stream
-
-
 #stream <- c("Spring", "Stockdale", "Gilmour", "HoganBay", "Erb", "Paddy", "Fish", "Admiralty", "Prospect", "Sawmill")[1]
-stream <- c("Erb", "HoganBay", "Paddy", "Spring", "Stockdale", "Gilmour", "Admiralty", "Fish", "Prospect", "Sawmill")[6]
+stream <- c("Erb", "HoganBay", "Paddy", "Spring", "Stockdale", "Gilmour", "Admiralty", "Fish", "Prospect", "Sawmill")[1]
 year <- 2013
 props <- c(0.05, 0.1, 0.167, 0.333, 0.5, 0.667, 0.833, 1)
 kSize <- 10
