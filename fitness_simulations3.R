@@ -37,12 +37,14 @@
 # Updated 4/23/15 by Kyle Shedd to fix bug associated with sample_prop_off and OUT not refreshing to NA before looping
 
 # Updated 5/28/15 by Kyle Shedd to add "while" loop, NOT DONE YET!!!!
+
+# Updated 12/31/21 by Kyle Shedd to analyze BY 2017 SEAK Chum streams.
 #======================================================================================================================#
 # Source files, import packages, set working directory, initialize variables
 
 ls()
 rm(list = ls(all = TRUE))
-setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie")
+# setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie")
 
 ##########################
 
@@ -57,24 +59,24 @@ ptm <- proc.time()
 
 ## Stream specific otolith results for females
 # Create a matrix of all stream/year/n.w/n.h values and then call them by row. Capiche?
-parents <- read.table(file = "StreamSpecific_All_Female_2013_2014.txt", header = TRUE, row.names = NULL, as.is = TRUE, sep = "\t")
-i = 17
+parents <- read.table(file = "data/StreamSpecific_All_Female_SEAK_Chum_2017.txt", header = TRUE, row.names = NULL, as.is = TRUE, sep = "\t")  # StreamSpecific_All_Female_2013_2014.txt
+i = 3  # stream
 
-setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie/StreamSpecific_ConstSize_RRS_0.8")
+# setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie/StreamSpecific_ConstSize_RRS_0.8")
 stream <- parents[i, 1]
 year <- parents[i, 2]
 n.w <- parents[i, 3]
 n.h <- parents[i, 4]
 
 # number of independent simulations to do
-trials <- 2000
+trials <- 400
 
 # R will spit out a .txt file for each F1 prop, but you can change how many run in each instance to speed things along
-kSample.Prop.Offs <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)[4]
+kSample.Prop.Offs <- c(1/20, 1/10, 1/6, 1/3, 1/2, 2/3, 5/6, 1)
 
-rrs.values <- 0.8 # seq(from = 0.5, to = 1, by = 0.05)
-mu.n.values <- c(0.25, seq(from = 0.5, to = 5, by = 0.5)) # R/female S (i.e. R/S / 2) # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
-size.values <- c(1, 2, 5, 10) #0.95
+rrs.values <- 0.8  # seq(from = 0.5, to = 1, by = 0.05)
+mu.n.values <- c(0.1, 0.25, 0.5, 0.75, 1, 1.5, 2)  # c(0.25, seq(from = 0.5, to = 5, by = 0.5))  # R/female S (i.e. R/S / 2) # THESE SIMULATIONS ARE TOTALLY DEPENDENT ON THE MU AND SIZE OF THE NATURAL DISTRIBUTION OF R/S
+size.values <- 1  # c(1, 2, 5, 10)  # 0.95
 
 
 #### Stopped HERE ####
@@ -94,7 +96,7 @@ for(kSample.Prop in kSample.Prop.Offs){
               
         OUT2 <- matrix(data = NA, nrow = trials, ncol = 10, dimnames = list(1:trials, c("errs", "mu.n", "size.n", "n.h", "n.w", "n.NHsampled", "n.NWsampled", "perm_1tail_pvalue", "nbGLM_1tail_pvalue", "ttest_1tail_pvalue")))
 
-        while(OUT[sum((r-1)*length(mu.n.values)*length(size.values), "Perm Power"] < 1) {}
+        # while(OUT[sum((r-1)*length(mu.n.values)*length(size.values), "Perm Power"] < 1) {}
         
         for(i in 1:trials) {
             
@@ -128,13 +130,13 @@ for(kSample.Prop in kSample.Prop.Offs){
 # Do a one-sided test
 # output should have t.test, permutation test, and Nbinom
 
-          mydata <- data.frame(nOff = c(NWassigned, NHassigned), Origin = c(rep("W", n.w), rep("H", n.h)))
+          mydata <- data.frame(nOff = c(NWassigned, NHassigned), Origin = factor(c(rep("W", n.w), rep("H", n.h))))
 
           if(sum(mydata$nOff) == 0) {
             next
           }
 # permutation test (1-tail)
-          perm_1tail_pvalue <- round(x = as.numeric(pvalue(oneway_test(nOff~Origin, data = mydata, distribution = approximate(B = 10000), alternative = "less"))), digits = 4)
+          perm_1tail_pvalue <- round(x = as.numeric(pvalue(oneway_test(nOff~Origin, data = mydata, distribution = approximate(nresample = 10000), alternative = "less"))), digits = 4)
 
         #reps <- 10000
         #true_diff <- mean(NWassigned)-mean(NHassigned)
@@ -168,7 +170,25 @@ for(kSample.Prop in kSample.Prop.Offs){
   
   }
 
-  write.table(OUT, paste("simulation_results_stream_", stream, "_", year, "_prop_", round(kSample.Prop, 3), "_trials_", trials, ".txt", sep = ''), col.names = TRUE, sep = "\t")
-
+  write.table(
+    x = OUT,
+    file = paste(
+      "output/rrs_",
+      errs,
+      "/simulation_results_stream_",
+      stream,
+      "_",
+      year,
+      "_prop_",
+      round(kSample.Prop, 3),
+      "_trials_",
+      trials,
+      ".txt",
+      sep = ''
+    ),
+    col.names = TRUE,
+    sep = "\t"
+  )
+  
 }
 proc.time() - ptm; beep(8)

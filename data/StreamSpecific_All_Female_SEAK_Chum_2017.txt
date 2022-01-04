@@ -1,0 +1,4 @@
+Stream	Year	Female.N	Female.H
+Fish	2017	372	614
+Prospect	2017	455	443
+Sawmill	2017	807	346

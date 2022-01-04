@@ -352,8 +352,8 @@ setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie/StreamSpecific_Cons
 
 setwd("V:/Analysis/5_Coastwide/Multispecies/Alaska Hatchery Research Program/Parentage Simulations/Simulations based on Christie et al. 2015 Box 2/StreamSpecific_ConstSize")
 
-stream=c("Spring", "Stockdale", "Gilmour", "HoganBay", "Erb", "Paddy", "Fish", "Admiralty", "Prospect", "Sawmill")[1]
-year=2013
+stream=c("Spring", "Stockdale", "Gilmour", "HoganBay", "Erb", "Paddy", "Fish", "Admiralty", "Prospect", "Sawmill")[7]
+year=2017
 
 par(mar=c(5.1, 4.1, 4.1, 2.1))
 par(mfrow = c(1, 1))
@@ -402,19 +402,36 @@ setwd("V:/Analysis/5_Coastwide/Multispecies/Alaska Hatchery Research Program/Par
 
 source("H:/R Source Scripts/Functions.GCL_KS.R")
 
+# January 4, 2022
+rm(list = ls())
+source("functions/filled.contour3.R")
+setwd("output/rrs_0.8")
+
 #### Target Dir
 # setwd("StreamSpecific")  # var.n = var.h
-setwd("StreamSpecific_ConstSize")  # size.n = size.h
+# setwd("StreamSpecific_ConstSize")  # size.n = size.h
 # setwd("StreamSpecific_ConstSize_RRS_0.8")  # size.n = size.h
 
 #stream <- c("Spring", "Stockdale", "Gilmour", "HoganBay", "Erb", "Paddy", "Fish", "Admiralty", "Prospect", "Sawmill")[1]
-stream <- c("Erb", "HoganBay", "Paddy", "Spring", "Stockdale", "Gilmour", "Admiralty", "Fish", "Prospect", "Sawmill")[1]
-year <- 2013
+stream <- c("Erb", "HoganBay", "Paddy", "Spring", "Stockdale", "Gilmour", "Admiralty", "Fish", "Prospect", "Sawmill")[10]
+year <- 2017
 props <- c(0.05, 0.1, 0.167, 0.333, 0.5, 0.667, 0.833, 1)
-#kSize <- 1
-for(kSize in c(1, 2, 5, 10)){
+kSize <- 1
+# for(kSize in c(1, 2, 5, 10)){
   
-OUT <- setNames(object = sapply(props, function(prop) {read.table(file = grep(pattern = paste(year, "_prop_", prop, "_", sep=""), x = list.files(path=getwd(), pattern=stream, full.names=TRUE), value = TRUE))}, simplify = FALSE), nm = props)
+OUT <-
+  setNames(object = sapply(props, function(prop) {
+    read.table(file = grep(
+      pattern = paste(year, "_prop_", prop, "_", sep = ""),
+      x = list.files(
+        path = getwd(),
+        pattern = stream,
+        full.names = TRUE
+      ),
+      value = TRUE
+    ))
+  }, simplify = FALSE),
+  nm = props)
 
 ## Isolate a specific "size.n"
 # different size.n values
@@ -436,25 +453,123 @@ jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F",
 zmin <- 0
 zmax <- 1
 
-filled.contour3(x = as.numeric(rownames(newmat)),y = as.numeric(colnames(newmat)), z = newmat, color = jet.colors,
-                xlim= c (0, 5), ylim = c(0, max(as.numeric(colnames(newmat)))), zlim = c(zmin,zmax),
-                xlab = "", ylab = "", cex.lab = 2, axes = FALSE)
+filled.contour3(
+  x = as.numeric(rownames(newmat)),
+  y = as.numeric(colnames(newmat)),
+  z = newmat,
+  color = jet.colors,
+  xlim = c(0, 2),  # c(0, 5), changing to max 2 for 2017 power plots
+  ylim = c(0, max(as.numeric(colnames(
+    newmat
+  )))),
+  zlim = c(zmin, zmax),
+  xlab = "",
+  ylab = "",
+  cex.lab = 2,
+  axes = FALSE
+)
 
-mtext(expression(paste("F"[1], " sampling proportion", sep = "")), side = 2, line = 3.5, cex = 2, las = 0)
-mtext(side = 1, "Mean RS Natural-origin", cex = 2, line = 3)
-mtext(side=3, paste(stream, " ", year, sep = ""), cex = 2, line = 3)
-mtext(side=3, paste("Dispersion = ", kSize, "; N = ", OUT[[1]][1, "N.w.parents"], "; H = ", OUT[[1]][1, "N.h.parents"], sep = ""), cex = 2, line = 1)
-plot.axes = { axis(1, at=seq(0,5,by=1), cex.axis=1.5);
-              axis(2, at=c(0,as.numeric(colnames(newmat))),labels=c("0","1/20","1/10","1/6","1/3","1/2","2/3","5/6","1"),las=1,cex.axis=1.5) }
+mtext(
+  expression(paste("F"[1], " sampling proportion", sep = "")),
+  side = 2,
+  line = 3.5,
+  cex = 2,
+  las = 0
+)
+
+mtext(
+  side = 1,
+  "Mean RS Natural-origin",
+  cex = 2,
+  line = 3
+)
+
+mtext(
+  side = 3,
+  paste(stream, " ", year, sep = ""),
+  cex = 2,
+  line = 3
+)
+
+mtext(
+  side = 3,
+  paste("Dispersion = ", kSize, "; N = ", OUT[[1]][1, "N.w.parents"], "; H = ", OUT[[1]][1, "N.h.parents"], sep = ""),
+  cex = 2,
+  line = 1
+)
+
+plot.axes = {
+  axis(1, at = seq(0, 2, by = 0.5), cex.axis = 1.5)  # seq(0, 5, by = 1)
+  
+  axis(
+    2,
+    at = c(0, as.numeric(colnames(newmat))),
+    labels = c("0", "1/20", "1/10", "1/6", "1/3", "1/2", "2/3", "5/6", "1"),
+    las = 1,
+    cex.axis = 1.5
+  )
+}
 
 #points(x = rep(x = as.numeric(rownames(newmat)), each = ncol(newmat)), y = rep(x = as.numeric(colnames(newmat)), times = nrow(newmat)), cex = 2, pch = 16)  # add points to show how interpolations are done
-contour(x = as.numeric(rownames(newmat)), y = as.numeric(colnames(newmat)), z = newmat, levels = 0.8, add = TRUE, lwd = 5, labcex = 2.5, method = "edge")
+contour(
+  x = as.numeric(rownames(newmat)),
+  y = as.numeric(colnames(newmat)),
+  z = newmat,
+  levels = 0.8,
+  add = TRUE,
+  lwd = 5,
+  labcex = 2.5,
+  method = "edge"
+)
 
-par(new = "TRUE",plt = c(0.87,0.92,0.20,0.80),las = 1,cex.axis = 1.5)
-filled.legend(as.numeric(rownames(newmat)),y=as.numeric(colnames(newmat)),newmat,color=jet.colors,xlab="",ylab="",xlim=c(min(xintercepts),max(xintercepts)),ylim=c(min(slopes),max(slopes)),zlim=c(zmin,zmax))
-filled.legend(as.numeric(rownames(newmat)),y=as.numeric(colnames(newmat)),newmat,color=jet.colors,xlab="",ylab="",xlim=c(min(xintercepts),max(xintercepts)),ylim=c(min(slopes),max(slopes)),zlim=c(zmin,zmax))
-mtext("Power",cex=2,padj=-0.3, adj = 0.2)
-}
+par(
+  new = "TRUE",
+  plt = c(0.87, 0.92, 0.20, 0.80),
+  las = 1,
+  cex.axis = 1.5
+)
+filled.legend(
+  as.numeric(rownames(newmat)),
+  y = as.numeric(colnames(newmat)),
+  newmat,
+  color = jet.colors,
+  xlab = "",
+  ylab = "",
+  xlim = c(min(xintercepts), max(xintercepts)),
+  ylim = c(min(slopes), max(slopes)),
+  zlim = c(zmin, zmax)
+)
+filled.legend(
+  as.numeric(rownames(newmat)),
+  y = as.numeric(colnames(newmat)),
+  newmat,
+  color = jet.colors,
+  xlab = "",
+  ylab = "",
+  xlim = c(min(xintercepts), max(xintercepts)),
+  ylim = c(min(slopes), max(slopes)),
+  zlim = c(zmin, zmax)
+)
+mtext("Power",
+      cex = 2,
+      padj = -0.3,
+      adj = 0.2)
+# }  # kSize
+setwd("../..")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Testing
 prop <- props[3]
