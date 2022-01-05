@@ -59,7 +59,7 @@ ptm <- proc.time()
 
 ## Stream specific otolith results for females
 # Create a matrix of all stream/year/n.w/n.h values and then call them by row. Capiche?
-parents <- read.table(file = "data/StreamSpecific_All_Female_SEAK_Chum_2017.txt", header = TRUE, row.names = NULL, as.is = TRUE, sep = "\t")  # StreamSpecific_All_Female_2013_2014.txt
+parents <- read.table(file = "data/StreamSpecific_All_Male_SEAK_Chum_2017.txt", header = TRUE, row.names = NULL, as.is = TRUE, sep = "\t")  # StreamSpecific_All_Female_2013_2014.txt
 i = 3  # stream
 
 # setwd("V:/WORK/Pink/AHRG/Parentage simulations/Mark Christie/StreamSpecific_ConstSize_RRS_0.8")
@@ -175,7 +175,7 @@ for(kSample.Prop in kSample.Prop.Offs){
     file = paste(
       "output/rrs_",
       errs,
-      "/simulation_results_stream_",
+      "/male/simulation_results_stream_",
       stream,
       "_",
       year,

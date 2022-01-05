@@ -1,0 +1,4 @@
+Stream	Year	Male.N	Male.H
+Fish	2017	436	452
+Prospect	2017	399	106
+Sawmill	2017	579	216

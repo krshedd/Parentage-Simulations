@@ -402,10 +402,12 @@ setwd("V:/Analysis/5_Coastwide/Multispecies/Alaska Hatchery Research Program/Par
 
 source("H:/R Source Scripts/Functions.GCL_KS.R")
 
-# January 4, 2022
+#### January 4, 2022 ####
+
+library(scatterplot3d)
 rm(list = ls())
 source("functions/filled.contour3.R")
-setwd("output/rrs_0.8")
+setwd("output/rrs_0.8/male")
 
 #### Target Dir
 # setwd("StreamSpecific")  # var.n = var.h
@@ -555,7 +557,7 @@ mtext("Power",
       padj = -0.3,
       adj = 0.2)
 # }  # kSize
-setwd("../..")
+setwd("../../..")
 
 
 
